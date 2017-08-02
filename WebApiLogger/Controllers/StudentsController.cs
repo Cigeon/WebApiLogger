@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApiLogger.Data;
 using WebApiLogger.Models;
 using WebApiLogger.Serivces;
+using Microsoft.Extensions.Logging;
 
 namespace WebApiLogger.Controllers
 {
@@ -13,11 +14,13 @@ namespace WebApiLogger.Controllers
     [Route("api/Students")]
     public class StudentsController : Controller
     {
+        private readonly ILoggerFactory _loggerFactory;
         private readonly AcademyService _academy;
         private readonly IStudentsService _recruiter;
 
-        public StudentsController(AcademyService academy, IStudentsService recruiter)
+        public StudentsController(ILoggerFactory loggerFactory, AcademyService academy, IStudentsService recruiter)
         {
+            _loggerFactory = loggerFactory;
             _academy = academy;
             _recruiter = recruiter;
         }
@@ -26,7 +29,6 @@ namespace WebApiLogger.Controllers
         [HttpGet]
         public async Task<IEnumerable<Student>> GetStudents()
         {
-            // return _context.Students;
             return await _academy.GetStudentsAsync();
         }
 
