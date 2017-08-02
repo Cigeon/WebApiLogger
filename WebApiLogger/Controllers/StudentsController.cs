@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApiLogger.Data;
 using WebApiLogger.Models;
+using WebApiLogger.Serivces;
 
 namespace WebApiLogger.Controllers
 {
@@ -12,18 +13,21 @@ namespace WebApiLogger.Controllers
     [Route("api/Students")]
     public class StudentsController : Controller
     {
-        private readonly StudentContext _context;
+        private readonly AcademyService _academy;
+        private readonly IStudentsService _recruiter;
 
-        public StudentsController(StudentContext context)
+        public StudentsController(AcademyService academy, IStudentsService recruiter)
         {
-            _context = context;
+            _academy = academy;
+            _recruiter = recruiter;
         }
 
         // GET: api/Students
         [HttpGet]
-        public IEnumerable<Student> GetStudents()
+        public async Task<IEnumerable<Student>> GetStudents()
         {
-            return _context.Students;
+            // return _context.Students;
+            return await _academy.GetStudentsAsync();
         }
 
         // GET: api/Students/5
@@ -35,7 +39,7 @@ namespace WebApiLogger.Controllers
                 return BadRequest(ModelState);
             }
 
-            var student = await _context.Students.SingleOrDefaultAsync(m => m.Id == id);
+            var student = await _recruiter.GetStudentByIdAsync(id);
 
             if (student == null)
             {
@@ -59,11 +63,9 @@ namespace WebApiLogger.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(student).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                await _recruiter.UpdateStudentAsync(student);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -89,8 +91,7 @@ namespace WebApiLogger.Controllers
                 return BadRequest(ModelState);
             }
 
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
+            await _recruiter.AddStudentAsync(student);
 
             return CreatedAtAction("GetStudent", new { id = student.Id }, student);
         }
@@ -104,21 +105,20 @@ namespace WebApiLogger.Controllers
                 return BadRequest(ModelState);
             }
 
-            var student = await _context.Students.SingleOrDefaultAsync(m => m.Id == id);
+            var student = await _recruiter.GetStudentByIdAsync(id);
             if (student == null)
             {
                 return NotFound();
             }
 
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
+            await _recruiter.DeleteStudentAsync(student);
 
             return Ok(student);
         }
 
         private bool StudentExists(int id)
         {
-            return _context.Students.Any(e => e.Id == id);
+            return _recruiter.GetStudentsAsync().Result.Any(e => e.Id == id);
         }
     }
 }

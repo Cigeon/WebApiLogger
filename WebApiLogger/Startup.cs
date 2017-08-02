@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using WebApiLogger.Data;
+using WebApiLogger.Serivces;
 
 namespace WebApiLogger
 {
@@ -28,7 +29,11 @@ namespace WebApiLogger
             // Add context
             services.AddDbContext<StudentContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            
+
+            // Add students services
+            services.AddScoped<AcademyService>();
+            services.AddScoped<IStudentsService, RecruiterService>();          
+
             // Add framework services.
             services.AddMvc();
         }
