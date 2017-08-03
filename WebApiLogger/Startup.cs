@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using WebApiLogger.Data;
 using WebApiLogger.Serivces;
+using WebApiLogger.Loggers;
 
 namespace WebApiLogger
 {
@@ -45,7 +46,7 @@ namespace WebApiLogger
                                 StudentContext context )
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
+            loggerFactory.AddFile("Logs/WebApiLogger-{Date}.txt");
 
             app.UseMvc();
 

@@ -7,6 +7,7 @@ using WebApiLogger.Data;
 using WebApiLogger.Models;
 using WebApiLogger.Serivces;
 using Microsoft.Extensions.Logging;
+using WebApiLogger.Loggers;
 
 namespace WebApiLogger.Controllers
 {
@@ -14,22 +15,32 @@ namespace WebApiLogger.Controllers
     [Route("api/Students")]
     public class StudentsController : Controller
     {
-        private readonly ILoggerFactory _loggerFactory;
         private readonly AcademyService _academy;
         private readonly IStudentsService _recruiter;
+        private readonly ILogger _logger;
 
-        public StudentsController(ILoggerFactory loggerFactory, AcademyService academy, IStudentsService recruiter)
+
+        public StudentsController(  AcademyService academy, 
+                                    IStudentsService recruiter, 
+                                    ILogger<StudentsController> logger  )
         {
-            _loggerFactory = loggerFactory;
             _academy = academy;
             _recruiter = recruiter;
+            _logger = logger;
         }
 
         // GET: api/Students
         [HttpGet]
         public async Task<IEnumerable<Student>> GetStudents()
         {
-            return await _academy.GetStudentsAsync();
+            var students = await _academy.GetStudentsAsync();
+            _logger.LogInformation("Get list of students");
+            foreach (var student in students)
+            {
+                _logger.LogInformation("Id={0}, FirstName={1}, LastName={2}, Age={3}",
+                                        student.Id, student.FirstName, student.LastName, student.Age);
+            }
+            return students;
         }
 
         // GET: api/Students/5
@@ -38,6 +49,7 @@ namespace WebApiLogger.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Bad request, model is not valid!");
                 return BadRequest(ModelState);
             }
 
@@ -45,9 +57,12 @@ namespace WebApiLogger.Controllers
 
             if (student == null)
             {
+                _logger.LogWarning("Bad request, student with id: {0}, not found!", id);
                 return NotFound();
             }
 
+            _logger.LogInformation("Get student, Id={0}, FirstName={1}, LastName={2}, Age={3}",
+                                    student.Id, student.FirstName, student.LastName, student.Age);
             return Ok(student);
         }
 
@@ -57,11 +72,13 @@ namespace WebApiLogger.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Bad request, model is not valid!");
                 return BadRequest(ModelState);
             }
 
             if (id != student.Id)
             {
+                _logger.LogWarning("Bad request, ids not equal! Request id={0} and student id={1}", id, student.Id);
                 return BadRequest();
             }
 
@@ -73,6 +90,7 @@ namespace WebApiLogger.Controllers
             {
                 if (!StudentExists(id))
                 {
+                    _logger.LogWarning("Bad request, student with id: {0}, not found!", id);
                     return NotFound();
                 }
                 else
@@ -81,6 +99,8 @@ namespace WebApiLogger.Controllers
                 }
             }
 
+            _logger.LogInformation("Update student, Id={0}, FirstName={1}, LastName={2}, Age={3}",
+                                    student.Id, student.FirstName, student.LastName, student.Age);
             return NoContent();
         }
 
@@ -90,11 +110,13 @@ namespace WebApiLogger.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Bad request, model is not valid!");
                 return BadRequest(ModelState);
             }
 
             await _recruiter.AddStudentAsync(student);
-
+            _logger.LogInformation("Add new student, FirstName={0}, LastName={1}, Age={2}", 
+                                    student.FirstName, student.LastName, student.Age);
             return CreatedAtAction("GetStudent", new { id = student.Id }, student);
         }
 
@@ -104,17 +126,20 @@ namespace WebApiLogger.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Bad request, model is not valid!");
                 return BadRequest(ModelState);
             }
 
             var student = await _recruiter.GetStudentByIdAsync(id);
             if (student == null)
             {
+                _logger.LogWarning("Bad request, student with id: {0}, not found!", id);
                 return NotFound();
             }
 
             await _recruiter.DeleteStudentAsync(student);
-
+            _logger.LogInformation("Delete student, Id={0}, FirstName={1}, LastName={2}, Age={3}",
+                                    student.Id, student.FirstName, student.LastName, student.Age);
             return Ok(student);
         }
 
